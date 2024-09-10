@@ -14,7 +14,7 @@ struct Bot1 {
   bool pressed;
   bool lastState; 
 };
-Bot1 sumar = {34, false, false};
+Bot1 sumar = {32, false, false};
 //interrupción para el botón 
 void IRAM_ATTR handle_1(){
   portENTER_CRITICAL_ISR(&mux);
