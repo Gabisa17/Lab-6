@@ -1,0 +1,157 @@
+#include <Arduino.h>
+#include <LiquidCrystal_I2C.h>
+
+
+//Iniciar interrupcion
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+
+//ESTABLECER PANTALLA
+LiquidCrystal_I2C LCD (0x27, 16, 2);
+
+//Boton 1
+struct Bot1 { 
+  const uint8_t boton_1;
+  bool pressed;
+  bool lastState; 
+};
+Bot1 sumar = {34, false, false};
+//interrupción para el botón 
+void IRAM_ATTR handle_1(){
+  portENTER_CRITICAL_ISR(&mux);
+  sumar.pressed = true;
+  portEXIT_CRITICAL_ISR(&mux);
+}
+
+//Boton 2
+struct Bot2 { 
+  const uint8_t boton_2;
+  bool pressed;
+  bool lastState; 
+};
+Bot2 restar = {33, false, false};
+//interrupción para el botón 
+void IRAM_ATTR handle_2(){
+  portENTER_CRITICAL_ISR(&mux);
+  restar.pressed = true;
+  portEXIT_CRITICAL_ISR(&mux);
+}
+//Contador
+volatile uint8_t contador;
+
+//Potenciometros
+#define pot1 39
+#define pot2 36
+
+//Variables a utilizar para subir el numero a la pantalla
+uint8_t decenas1, unidades1, decimal1;
+uint8_t decenas2, unidades2, decimal2;
+uint8_t decenas3, unidades3, decimal3;
+
+//Funciones Potenciometros
+float volt1; 
+float volt2; 
+
+void setup(){
+// entrada boton sumar
+pinMode(sumar.boton_1, INPUT_PULLUP);
+attachInterrupt(sumar.boton_1, handle_1, RISING);
+
+// entrada boton restar
+pinMode(restar.boton_2, INPUT_PULLUP);
+attachInterrupt(restar.boton_2, handle_2, RISING);
+
+    Serial.begin(115200);
+    //Iniciar LCD
+    LCD.init();
+    LCD.backlight();
+    //Establecer cursor
+    LCD.setCursor(0,0);
+    //Print message to the LCD
+    LCD.print("HOLI");
+
+    delay(3000);
+}
+
+void loop(){
+    //Valor potenciometro 1
+    volt1 = analogReadMilliVolts(pot1) / 10.0;
+    int val1 = volt1;
+    decenas1 = val1 / 100.0;
+    val1 = val1 - decenas1 * 100.0;
+    unidades1 = val1 / 10.0;
+    val1 = val1 -unidades1*10.0;
+    decimal1 = val1; 
+
+    //Valor potenciometro 2
+    volt2 = analogReadMilliVolts(pot2) / 10.0;
+    int val2 = volt2;
+    decenas2 = val2 / 100.0;
+    val2 = val2 - decenas2 * 100.0;
+    unidades2 = val2 / 10.0;
+    val2 = val2 -unidades2*10.0;
+    decimal2 = val2; 
+
+    //Valor potenciometro 2
+    int val3 = contador;
+    decenas3 = val3 / 100.0;
+    val3 = val3 - decenas3 * 100.0;
+    unidades3 = val3 / 10.0;
+    val3 = val3 -unidades3*10.0;
+    decimal3 = val3;
+
+//Imprimir potenciometro 1 en LCD
+    LCD.setCursor(0,0);
+    LCD.print("Pot1:");
+    LCD.setCursor(0, 1);
+    LCD.print (decenas1);
+    LCD.print('.');
+    LCD.print (unidades1);
+    LCD.print (decimal1);
+
+//Imprimir potenciometro 2 en LCD
+    LCD.setCursor(6,0);
+    LCD.print("Pot2:");
+    LCD.setCursor(6, 1);
+    LCD.print (decenas2);
+    LCD.print('.');
+    LCD.print (unidades2);
+    LCD.print (decimal2);
+
+//Imprimir contador en LCD
+    LCD.setCursor(12,0);
+    LCD.print("CPU:");
+    LCD.setCursor(12, 1);
+    LCD.print (decenas3);
+    LCD.print('.');
+    LCD.print (unidades3);
+    LCD.print (decimal3);
+
+//función sumar contador
+if (sumar.pressed != sumar.lastState)
+  {
+    if (sumar.pressed)
+    {
+        if (contador == 255){
+            contador = 0;
+        }
+        else{
+            contador++;
+        }
+      sumar.pressed = false;
+    }
+    sumar.lastState = sumar.pressed;
+  }
+
+//función restar contador
+if(restar.pressed != restar.lastState)
+  {
+    if (restar.pressed)
+    {
+      contador--;
+      restar.pressed = false;
+    }
+    restar.lastState = restar.pressed;
+  }
+
+delay(100);
+}
