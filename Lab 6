@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
-
+#include <Wire.h>
 
 //Iniciar interrupcion
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
